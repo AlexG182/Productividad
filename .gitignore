@@ -1,0 +1,201 @@
+# ==========================================
+# Ivy Lee Weekly Planner - .gitignore
+# ==========================================
+
+# ============================================
+# Operating System Files
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# Editor & IDE
+# ============================================
+
+# Visual Studio Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains IDEs (WebStorm, IntelliJ, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+.#*
+
+# ============================================
+# Node.js (si usas herramientas de build)
+# ============================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# dotenv environment variables file
+.env
+.env.test
+.env.production
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ============================================
+# Build & Distribution
+# ============================================
+
+dist/
+build/
+.cache/
+.parcel-cache/
+.next/
+out/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+
+# ============================================
+# Logs
+# ============================================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# ============================================
+# Testing & Coverage
+# ============================================
+
+coverage/
+*.lcov
+.nyc_output
+lib-cov
+.grunt
+.lock-wscript
+
+# ============================================
+# Temporary Files
+# ============================================
+
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.cache
+
+# ============================================
+# Project Specific
+# ============================================
+
+# Backup files (si creas backups)
+*.backup
+backup/
+
+# Local configuration (si tienes configs locales)
+config.local.js
+settings.local.json
+
+# Screenshots or test images
+screenshots/
+test-images/
+
+# ============================================
+# Archive Files (opcional)
+# ============================================
+
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.war
+
+# ============================================
+# Compiled Source (si usas TypeScript/Babel)
+# ============================================
+
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.map
+
+# ============================================
+# Package Manager Lock Files (opcional)
+# Descomenta si no quieres versionar lock files
+# ============================================
+
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
