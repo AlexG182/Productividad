@@ -4,7 +4,8 @@
 const state = {
     currentWeekStart: null,
     weeklyData: {},
-    streak: 0
+    streak: 0,
+    draggedItem: null // Track dragged item
 };
 
 // ========================================
@@ -159,6 +160,38 @@ function moveTask(dateKey, taskId, direction) {
     renderDay(dateKey);
 }
 
+function moveTaskAcrossDays(sourceDateKey, targetDateKey, taskId) {
+    if (sourceDateKey === targetDateKey) return;
+
+    const sourceDayData = state.weeklyData[sourceDateKey];
+    const targetDayData = state.weeklyData[targetDateKey];
+
+    // Check if target day is full
+    if (targetDayData.tasks.length >= 6) {
+        alert('⚠️ El día de destino ya tiene 6 tareas. No se pueden mover más tareas.');
+        return;
+    }
+
+    // Find and remove task from source
+    const taskIndex = sourceDayData.tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    const [task] = sourceDayData.tasks.splice(taskIndex, 1);
+
+    // Update priorities in source day
+    sourceDayData.tasks.forEach((t, index) => {
+        t.priority = index + 1;
+    });
+
+    // Add task to target day
+    task.priority = targetDayData.tasks.length + 1;
+    targetDayData.tasks.push(task);
+
+    saveToLocalStorage();
+    renderDay(sourceDateKey);
+    renderDay(targetDateKey);
+    updateStatistics();
+}
+
 // ========================================
 // Rendering Functions
 // ========================================
@@ -257,6 +290,11 @@ function createTaskElement(task, dateKey, index, totalTasks) {
             moveTask(dateKey, task.id, 'down');
         });
     }
+
+    // Drag and drop events for task
+    taskItem.setAttribute('draggable', 'true');
+    taskItem.addEventListener('dragstart', (e) => handleDragStart(e, task, dateKey));
+    taskItem.addEventListener('dragend', handleDragEnd);
 
     return taskItem;
 }
@@ -363,6 +401,12 @@ function renderWeek() {
             }
             </div>
         `;
+
+        // Drag and drop events for day card
+        dayCard.addEventListener('dragover', handleDragOver);
+        dayCard.addEventListener('dragenter', handleDragEnter);
+        dayCard.addEventListener('dragleave', handleDragLeave);
+        dayCard.addEventListener('drop', (e) => handleDrop(e, dateKey));
 
         daysGrid.appendChild(dayCard);
         renderDay(dateKey);
@@ -598,6 +642,64 @@ function init() {
 
     // Eat That Frog Modal Event Listeners
     initEatFrogModal();
+}
+
+// ========================================
+// Drag and Drop Handlers
+// ========================================
+
+function handleDragStart(e, task, dateKey) {
+    state.draggedItem = { task, sourceDateKey: dateKey };
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    // Set data for compatibility
+    e.dataTransfer.setData('text/plain', JSON.stringify({ taskId: task.id, dateKey }));
+}
+
+function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+    state.draggedItem = null;
+
+    // Remove drag-over class from all days
+    document.querySelectorAll('.day-card').forEach(card => {
+        card.classList.remove('drag-over');
+    });
+}
+
+function handleDragOver(e) {
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    e.preventDefault();
+    const dayCard = e.currentTarget;
+    dayCard.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    const dayCard = e.currentTarget;
+    // Check if we are really leaving the day card (and not just entering a child)
+    if (!dayCard.contains(e.relatedTarget)) {
+        dayCard.classList.remove('drag-over');
+    }
+}
+
+function handleDrop(e, targetDateKey) {
+    e.stopPropagation(); // Stops the browser from redirecting.
+    e.preventDefault();
+
+    const dayCard = e.currentTarget;
+    dayCard.classList.remove('drag-over');
+
+    if (!state.draggedItem) return;
+
+    const { task, sourceDateKey } = state.draggedItem;
+
+    if (sourceDateKey !== targetDateKey) {
+        moveTaskAcrossDays(sourceDateKey, targetDateKey, task.id);
+    }
 }
 
 // ========================================

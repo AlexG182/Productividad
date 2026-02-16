@@ -1592,3 +1592,36 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
 }
+
+/* ========================================
+   Drag and Drop Styles
+   ======================================== */
+.task-item.dragging {
+    opacity: 0.5;
+    background: var(--bg-card);
+    border-color: var(--primary);
+    transform: scale(0.95);
+    cursor: grabbing;
+}
+
+.day-card.drag-over {
+    border-color: var(--primary);
+    background: var(--bg-card-hover);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.day-card.drag-over::after {
+    content: 'Soltar para mover aquí';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0.9;
+}
