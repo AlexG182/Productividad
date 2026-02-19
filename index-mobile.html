@@ -3,7 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0f">
     <title>Ivy Lee Method - Weekly Planner</title>
     <meta name="description"
         content="Planifica tu semana de forma productiva usando el Método Ivy Lee - Prioriza y conquista tus objetivos">
@@ -12,20 +15,20 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-mobile.css">
 </head>
 
 <body>
     <!-- Background Animation -->
     <div class="background-gradient"></div>
 
-    <!-- Header -->
+    <!-- Mobile Header -->
     <header class="header">
         <div class="container">
             <div class="header-content">
                 <div class="logo-section">
                     <div class="logo-icon">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M16 2L28 9V23L16 30L4 23V9L16 2Z" stroke="currentColor" stroke-width="2"
                                 stroke-linejoin="round" />
                             <path d="M16 16L22 12V20L16 24L10 20V12L16 16Z" fill="currentColor" />
@@ -36,78 +39,50 @@
                         <p class="subtitle">Masterclass in Prioritization</p>
                     </div>
                 </div>
-                <div class="header-actions">
-                    <span class="save-status" id="saveStatusIndicator">💾 Listo</span>
-                    <button class="btn btn-accent" id="eatFrogBtn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                            <line x1="9" y1="9" x2="9.01" y2="9" />
-                            <line x1="15" y1="9" x2="15.01" y2="9" />
-                        </svg>
-                        🐸 Tráguese ese Sapo
-                    </button>
-                    <button class="btn btn-save" id="saveJsonBtn"
-                        title="Guarda todos tus datos en un archivo .json para no perderlos">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                            <polyline points="17 21 17 13 7 13 7 21" />
-                            <polyline points="7 3 7 8 15 8" />
-                        </svg>
-                        Guardar Datos
-                    </button>
-                    <button class="btn btn-load" id="loadJsonBtn"
-                        title="Carga datos guardados previamente desde un archivo .json">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                            <polyline points="17 8 12 3 7 8" />
-                            <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        Cargar Datos
-                    </button>
-                    <input type="file" id="loadJsonInput" accept=".json" style="display:none">
-                    <button class="btn btn-secondary" id="clearAllBtn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                        </svg>
-                        Limpiar Todo
-                    </button>
-                    <button class="btn btn-primary" id="exportBtn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        Exportar Plan
-                    </button>
-                </div>
+                <button class="btn-icon menu-toggle" id="menuToggle">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
 
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-content">
+            <button class="btn btn-accent btn-block" id="eatFrogBtnMobile">
+                🐸 Tráguese ese Sapo
+            </button>
+            <button class="btn btn-secondary btn-block" id="clearAllBtnMobile">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                </svg>
+                Limpiar Todo
+            </button>
+            <button class="btn btn-primary btn-block" id="exportBtnMobile">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                Exportar Plan
+            </button>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Persistence Notice Banner -->
-        <div class="persistence-banner" id="persistenceBanner">
-            <div class="container">
-                <span>💡 <strong>Tip de guardado:</strong> Los datos se guardan en el navegador automáticamente. Para
-                    mayor seguridad, usa <strong>"Guardar Datos"</strong> periódicamente y guarda el archivo
-                    <code>ivylee-datos.json</code> junto al HTML. Usa <strong>"Cargar Datos"</strong> para recuperarlos
-                    si el navegador los borra.</span>
-                <button class="banner-close" onclick="document.getElementById('persistenceBanner').style.display='none'"
-                    title="Cerrar">&times;</button>
-            </div>
-        </div>
         <div class="container">
-            <!-- Method Explanation -->
+            <!-- Method Explanation (Collapsible on Mobile) -->
             <section class="method-explanation">
-                <div class="explanation-card">
-                    <div class="card-header">
-                        <h2>🎯 Cómo Funciona</h2>
-                    </div>
+                <button class="explanation-toggle" id="explanationToggle">
+                    <span>🎯 Cómo Funciona el Método Ivy Lee</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6" />
+                    </svg>
+                </button>
+                <div class="explanation-card" id="explanationCard">
                     <div class="card-body">
                         <div class="method-steps">
                             <div class="step">
@@ -145,31 +120,34 @@
                 </div>
             </section>
 
-            <!-- Weekly Planner -->
-            <section class="weekly-planner">
-                <div class="planner-header">
-                    <h2>📅 Tu Semana Productiva</h2>
-                    <div class="week-selector">
-                        <button class="btn-icon" id="prevWeekBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M15 18l-6-6 6-6" />
-                            </svg>
-                        </button>
-                        <span class="current-week" id="currentWeek">Semana del 16 - 22 Feb 2026</span>
-                        <button class="btn-icon" id="nextWeekBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="days-grid" id="daysGrid">
-                    <!-- Days will be generated by JavaScript -->
+            <!-- Week Navigation -->
+            <section class="week-navigation">
+                <div class="week-selector">
+                    <button class="btn-icon" id="prevWeekBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <span class="current-week" id="currentWeek">Semana del 16 - 22 Feb 2026</span>
+                    <button class="btn-icon" id="nextWeekBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
                 </div>
             </section>
+
+            <!-- Days Carousel (Mobile View) -->
+            <section class="days-carousel" id="daysCarousel">
+                <!-- Days will be generated by JavaScript -->
+            </section>
+
+            <!-- Day Navigation Dots -->
+            <div class="day-dots" id="dayDots">
+                <!-- Dots will be generated by JavaScript -->
+            </div>
 
             <!-- Statistics Dashboard -->
             <section class="statistics-section">
@@ -179,28 +157,28 @@
                         <div class="stat-icon">✅</div>
                         <div class="stat-content">
                             <div class="stat-value" id="completedTasks">0</div>
-                            <div class="stat-label">Tareas Completadas</div>
+                            <div class="stat-label">Completadas</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">📋</div>
                         <div class="stat-content">
                             <div class="stat-value" id="totalTasks">0</div>
-                            <div class="stat-label">Total de Tareas</div>
+                            <div class="stat-label">Total</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">🎯</div>
                         <div class="stat-content">
                             <div class="stat-value" id="completionRate">0%</div>
-                            <div class="stat-label">Tasa de Cumplimiento</div>
+                            <div class="stat-label">Cumplimiento</div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">🔥</div>
                         <div class="stat-content">
                             <div class="stat-value" id="currentStreak">0</div>
-                            <div class="stat-label">Días Consecutivos</div>
+                            <div class="stat-label">Racha</div>
                         </div>
                     </div>
                 </div>
@@ -222,7 +200,7 @@
         <div class="modal-overlay"></div>
         <div class="modal-container">
             <div class="modal-header">
-                <h2>🐸 Tráguese ese Sapo - Brian Tracy</h2>
+                <h2>🐸 Tráguese ese Sapo</h2>
                 <button class="modal-close" id="closeModal">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 6L6 18M6 6l12 12" />
@@ -240,15 +218,15 @@
                 </div>
 
                 <div class="methodology-tabs">
-                    <button class="tab-btn active" data-tab="abcde">Método ABCDE</button>
-                    <button class="tab-btn" data-tab="pareto">Regla 80/20</button>
+                    <button class="tab-btn active" data-tab="abcde">ABCDE</button>
+                    <button class="tab-btn" data-tab="pareto">80/20</button>
                     <button class="tab-btn" data-tab="frog">Tu Sapo 🐸</button>
                     <button class="tab-btn" data-tab="methods">21 Métodos</button>
                 </div>
 
                 <div class="tab-content active" id="abcde-tab">
-                    <h3>📋 Método ABCDE de Priorización</h3>
-                    <p class="tab-description">Clasifica tus tareas según su importancia y consecuencias:</p>
+                    <h3>📋 Método ABCDE</h3>
+                    <p class="tab-description">Clasifica tus tareas según su importancia:</p>
 
                     <div class="abcde-grid">
                         <div class="abcde-card priority-a">
@@ -256,7 +234,6 @@
                             <div class="abcde-content">
                                 <h4>MUY IMPORTANTE</h4>
                                 <p>Tareas críticas que DEBES hacer. Consecuencias graves si no las completas.</p>
-                                <small>Ejemplo: Entrega de proyecto crítico, reunión con cliente importante</small>
                             </div>
                         </div>
                         <div class="abcde-card priority-b">
@@ -264,45 +241,40 @@
                             <div class="abcde-content">
                                 <h4>IMPORTANTE</h4>
                                 <p>Tareas que DEBERÍAS hacer. Consecuencias moderadas.</p>
-                                <small>Ejemplo: Devolver llamadas, revisar emails importantes</small>
                             </div>
                         </div>
                         <div class="abcde-card priority-c">
                             <div class="abcde-letter">C</div>
                             <div class="abcde-content">
                                 <h4>SERÍA BUENO</h4>
-                                <p>Tareas agradables pero sin consecuencias. No afectan tu trabajo.</p>
-                                <small>Ejemplo: Café con colega, organizar escritorio</small>
+                                <p>Tareas agradables pero sin consecuencias.</p>
                             </div>
                         </div>
                         <div class="abcde-card priority-d">
                             <div class="abcde-letter">D</div>
                             <div class="abcde-content">
                                 <h4>DELEGAR</h4>
-                                <p>Tareas que otra persona puede hacer. Delega todo lo posible.</p>
-                                <small>Ejemplo: Tareas administrativas, compras, reservas</small>
+                                <p>Tareas que otra persona puede hacer.</p>
                             </div>
                         </div>
                         <div class="abcde-card priority-e">
                             <div class="abcde-letter">E</div>
                             <div class="abcde-content">
                                 <h4>ELIMINAR</h4>
-                                <p>Tareas innecesarias que solo roban tiempo. Elimínalas completamente.</p>
-                                <small>Ejemplo: Reuniones innecesarias, navegación sin propósito</small>
+                                <p>Tareas innecesarias que solo roban tiempo.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="golden-rule">
                         <strong>⭐ Regla de Oro:</strong> Nunca hagas una tarea "B" cuando tengas una "A" pendiente.
-                        Nunca hagas una "C" cuando tengas una "B" pendiente.
                     </div>
 
-                    <button class="btn btn-primary btn-block" id="applyABCDE">Aplicar Método ABCDE a mis Tareas</button>
+                    <button class="btn btn-primary btn-block" id="applyABCDE">Aplicar Método ABCDE</button>
                 </div>
 
                 <div class="tab-content" id="pareto-tab">
-                    <h3>📊 Regla 80/20 (Principio de Pareto)</h3>
+                    <h3>📊 Regla 80/20</h3>
                     <p class="tab-description">El 20% de tus actividades produce el 80% de tus resultados.</p>
 
                     <div class="pareto-visual">
@@ -319,43 +291,27 @@
                     </div>
 
                     <div class="pareto-tips">
-                        <h4>💡 Cómo Aplicar la Regla 80/20:</h4>
+                        <h4>💡 Cómo Aplicar:</h4>
                         <ul>
-                            <li><strong>Identifica el 20%:</strong> ¿Cuáles 1-2 tareas de tus 6 generarán el 80% de los
+                            <li><strong>Identifica el 20%:</strong> ¿Cuáles 1-2 tareas generarán el 80% de los
                                 resultados?</li>
                             <li><strong>Enfócate ahí:</strong> Dedica tu mejor tiempo y energía a ese 20% crítico</li>
                             <li><strong>Minimiza el 80%:</strong> Reduce, delega o elimina el resto</li>
-                            <li><strong>Pregúntate:</strong> "Si solo pudiera hacer UNA tarea hoy, ¿cuál tendría el
-                                mayor impacto?"</li>
                         </ul>
                     </div>
 
-                    <div class="pareto-questions">
-                        <h4>🎯 Preguntas Poderosas:</h4>
-                        <div class="question-card">
-                            <p>¿Cuál es la tarea que, si la completo, hará que todas las demás sean más fáciles o
-                                innecesarias?</p>
-                        </div>
-                        <div class="question-card">
-                            <p>¿Qué actividad representa el mayor valor potencial para mi carrera/negocio?</p>
-                        </div>
-                        <div class="question-card">
-                            <p>¿Qué tarea, si la hago excelentemente, tendrá el mayor impacto positivo?</p>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary btn-block" id="identifyHighImpact">Identificar mis Tareas de Alto
+                    <button class="btn btn-primary btn-block" id="identifyHighImpact">Identificar Tareas de Alto
                         Impacto</button>
                 </div>
 
                 <div class="tab-content" id="frog-tab">
-                    <h3>🐸 Identifica y Traga tu Sapo</h3>
-                    <p class="tab-description">Tu "sapo" es la tarea más grande, importante y que más tiendes a
+                    <h3>🐸 Identifica tu Sapo</h3>
+                    <p class="tab-description">Tu "sapo" es la tarea más grande e importante que más tiendes a
                         procrastinar.</p>
 
                     <div class="frog-finder">
                         <h4>¿Cuál es tu SAPO hoy?</h4>
-                        <p>Selecciona tu tarea más importante del día:</p>
+                        <p>Selecciona tu tarea más importante:</p>
                         <div id="todayFrogSelector" class="frog-task-list">
                             <!-- Tasks will be loaded here dynamically -->
                         </div>
@@ -368,42 +324,23 @@
                                 <div class="principle-icon">1️⃣</div>
                                 <div class="principle-text">
                                     <strong>Hazlo PRIMERO</strong>
-                                    <p>Come tu sapo a primera hora de la mañana</p>
+                                    <p>Come tu sapo a primera hora</p>
                                 </div>
                             </div>
                             <div class="principle-card">
                                 <div class="principle-icon">2️⃣</div>
                                 <div class="principle-text">
                                     <strong>Si hay DOS sapos</strong>
-                                    <p>Come el más grande y feo primero</p>
-                                </div>
-                            </div>
-                            <div class="principle-card">
-                                <div class="principle-icon">3️⃣</div>
-                                <div class="principle-text">
-                                    <strong>Un sapo a la vez</strong>
-                                    <p>Enfoque total hasta completarlo</p>
-                                </div>
-                            </div>
-                            <div class="principle-card">
-                                <div class="principle-icon">4️⃣</div>
-                                <div class="principle-text">
-                                    <strong>Prepárate bien</strong>
-                                    <p>Ten todo listo antes de empezar</p>
+                                    <p>Come el más grande primero</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="frog-motivator">
-                        <p class="motivator-text">✨ <strong>Conquista tu sapo y el resto del día será pan
-                                comido</strong> ✨</p>
-                    </div>
                 </div>
 
                 <div class="tab-content" id="methods-tab">
-                    <h3>📚 Los 21 Métodos de Brian Tracy</h3>
-                    <p class="tab-description">Estrategias comprobadas para vencer la procrastinación:</p>
+                    <h3>📚 Los 21 Métodos</h3>
+                    <p class="tab-description">Estrategias de Brian Tracy para vencer la procrastinación:</p>
 
                     <div class="methods-list">
                         <div class="method-item">
@@ -559,53 +496,7 @@
         </div>
     </div>
 
-    <!-- Edit Task Modal -->
-    <div class="modal" id="editTaskModal">
-        <div class="modal-overlay"></div>
-        <div class="modal-container modal-container--sm">
-            <div class="modal-header">
-                <h2>
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        style="vertical-align:middle;margin-right:8px;">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Editar Tarea
-                </h2>
-                <button class="modal-close" id="closeEditModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="edit-task-form">
-                    <label class="edit-label" for="editTaskInput">Texto de la tarea</label>
-                    <textarea id="editTaskInput" class="edit-task-textarea" maxlength="200" rows="3"
-                        placeholder="Escribe el nuevo texto de la tarea..."></textarea>
-                    <div class="edit-meta">
-                        <span class="edit-hint">
-                            <kbd>Enter</kbd> para guardar &nbsp;·&nbsp; <kbd>Esc</kbd> para cancelar
-                        </span>
-                        <span class="edit-char-count" id="editCharCount">0/200</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelEditBtn">Cancelar</button>
-                <button class="btn btn-primary" id="saveEditBtn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                        <polyline points="17 21 17 13 7 13 7 21" />
-                        <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    Guardar Cambios
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+    <script src="script-mobile.js"></script>
 </body>
 
 </html>

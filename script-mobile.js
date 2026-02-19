@@ -1,18 +1,21 @@
 // ========================================
-// State Management
+// Mobile-Optimized Ivy Lee Planner
 // ========================================
+
+// State Management
 const state = {
     currentWeekStart: null,
     weeklyData: {},
     streak: 0,
-    draggedItem: null // Track dragged item
+    currentDayIndex: 0,
+    touchStartX: 0,
+    touchEndX: 0
 };
 
 // ========================================
 // Utility Functions
 // ========================================
 
-// Get week start date (Monday)
 function getWeekStart(date = new Date()) {
     const d = new Date(date);
     const day = d.getDay();
@@ -22,182 +25,53 @@ function getWeekStart(date = new Date()) {
     return d;
 }
 
-// Format date
 function formatDate(date) {
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${date.getDate()} ${months[date.getMonth()]}`;
 }
 
-// Format week range
 function formatWeekRange(weekStart) {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-    return `Semana del ${weekStart.getDate()} ${months[weekStart.getMonth()]} - ${weekEnd.getDate()} ${months[weekEnd.getMonth()]} ${weekStart.getFullYear()}`;
+    return `${weekStart.getDate()} ${months[weekStart.getMonth()]} - ${weekEnd.getDate()} ${months[weekEnd.getMonth()]} ${weekStart.getFullYear()}`;
 }
 
-// Get day name
 function getDayName(date) {
-    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     return days[date.getDay()];
 }
 
-// Get date key for storage
 function getDateKey(date) {
     return date.toISOString().split('T')[0];
 }
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // ========================================
-// Persistence System (Multi-Layer)
+// Local Storage Functions
 // ========================================
 
-// Layer 1: localStorage (primary)
 function saveToLocalStorage() {
-    try {
-        const payload = {
-            weeklyData: state.weeklyData,
-            streak: state.streak,
-            savedAt: new Date().toISOString()
-        };
-        localStorage.setItem('ivyLeeWeeklyData', JSON.stringify(state.weeklyData));
-        localStorage.setItem('ivyLeeStreak', state.streak.toString());
-        localStorage.setItem('ivyLeeLastSaved', new Date().toISOString());
-        // Also save full payload as backup key
-        localStorage.setItem('ivyLeeBackup', JSON.stringify(payload));
-        updateSaveStatus('saved');
-    } catch (e) {
-        console.warn('localStorage no disponible:', e);
-        updateSaveStatus('error');
-    }
+    localStorage.setItem('ivyLeeWeeklyData', JSON.stringify(state.weeklyData));
+    localStorage.setItem('ivyLeeStreak', state.streak.toString());
 }
 
 function loadFromLocalStorage() {
-    try {
-        // Try primary keys first
-        const savedData = localStorage.getItem('ivyLeeWeeklyData');
-        const savedStreak = localStorage.getItem('ivyLeeStreak');
+    const savedData = localStorage.getItem('ivyLeeWeeklyData');
+    const savedStreak = localStorage.getItem('ivyLeeStreak');
 
-        if (savedData) {
-            state.weeklyData = JSON.parse(savedData);
-        }
-        if (savedStreak) {
-            state.streak = parseInt(savedStreak, 10);
-        }
-
-        // If no data found, try backup key
-        if (!savedData) {
-            const backup = localStorage.getItem('ivyLeeBackup');
-            if (backup) {
-                const parsed = JSON.parse(backup);
-                if (parsed.weeklyData) state.weeklyData = parsed.weeklyData;
-                if (parsed.streak) state.streak = parsed.streak;
-            }
-        }
-
-        const lastSaved = localStorage.getItem('ivyLeeLastSaved');
-        if (lastSaved) {
-            console.log('Datos cargados. Último guardado:', new Date(lastSaved).toLocaleString());
-        }
-    } catch (e) {
-        console.warn('Error al cargar desde localStorage:', e);
+    if (savedData) {
+        state.weeklyData = JSON.parse(savedData);
     }
-}
 
-// Layer 2: JSON File Export/Import (for file:// protocol persistence)
-function exportDataAsJSON() {
-    const payload = {
-        version: '1.0',
-        weeklyData: state.weeklyData,
-        streak: state.streak,
-        exportedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ivylee-datos.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    updateSaveStatus('exported');
-}
-
-function importDataFromJSON(file) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            const payload = JSON.parse(e.target.result);
-            if (payload.weeklyData) {
-                state.weeklyData = payload.weeklyData;
-            }
-            if (payload.streak !== undefined) {
-                state.streak = payload.streak;
-            }
-            saveToLocalStorage();
-            renderWeek();
-            updateStatistics();
-            showNotification('✅ Datos importados exitosamente');
-        } catch (err) {
-            showNotification('❌ Error al importar el archivo');
-        }
-    };
-    reader.readAsText(file);
-}
-
-// Layer 3: File System Access API (auto-save to file, Chrome/Edge only)
-let fileHandle = null;
-
-async function saveToFile() {
-    if (!('showSaveFilePicker' in window)) return false;
-    try {
-        if (!fileHandle) {
-            fileHandle = await window.showSaveFilePicker({
-                suggestedName: 'ivylee-datos.json',
-                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-            });
-        }
-        const writable = await fileHandle.createWritable();
-        const payload = { version: '1.0', weeklyData: state.weeklyData, streak: state.streak, savedAt: new Date().toISOString() };
-        await writable.write(JSON.stringify(payload, null, 2));
-        await writable.close();
-        return true;
-    } catch (e) {
-        console.warn('File System API no disponible o cancelado:', e);
-        return false;
+    if (savedStreak) {
+        state.streak = parseInt(savedStreak, 10);
     }
-}
-
-// UI helpers
-function updateSaveStatus(status) {
-    const indicator = document.getElementById('saveStatusIndicator');
-    if (!indicator) return;
-    const now = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    if (status === 'saved') {
-        indicator.textContent = `💾 Guardado ${now}`;
-        indicator.className = 'save-status save-status--ok';
-    } else if (status === 'exported') {
-        indicator.textContent = `📤 Exportado ${now}`;
-        indicator.className = 'save-status save-status--ok';
-    } else if (status === 'error') {
-        indicator.textContent = '⚠️ Sin almacenamiento';
-        indicator.className = 'save-status save-status--warn';
-    }
-}
-
-function showNotification(message) {
-    let notif = document.getElementById('appNotification');
-    if (!notif) {
-        notif = document.createElement('div');
-        notif.id = 'appNotification';
-        notif.className = 'app-notification';
-        document.body.appendChild(notif);
-    }
-    notif.textContent = message;
-    notif.classList.add('show');
-    setTimeout(() => notif.classList.remove('show'), 3000);
 }
 
 // ========================================
@@ -215,10 +89,8 @@ function initializeDayData(dateKey) {
 
 function addTask(dateKey, taskText) {
     initializeDayData(dateKey);
-
     const dayData = state.weeklyData[dateKey];
 
-    // Maximum 6 tasks (Ivy Lee Method)
     if (dayData.tasks.length >= 6) {
         alert('⚠️ Método Ivy Lee: Máximo 6 tareas por día.\n\nPara agregar una nueva tarea, primero completa o elimina una existente.');
         return false;
@@ -244,8 +116,8 @@ function toggleTask(dateKey, taskId) {
     if (task) {
         task.completed = !task.completed;
         saveToLocalStorage();
-        renderDay(dateKey); // Re-render to update UI immediately
-        updateStatistics(); // Updates global stats
+        renderCurrentDay();
+        updateStatistics();
         checkStreak();
     }
 }
@@ -262,43 +134,8 @@ function deleteTask(dateKey, taskId) {
     });
 
     saveToLocalStorage();
-    renderDay(dateKey);
+    renderCurrentDay();
     updateStatistics();
-}
-
-function editTask(dateKey, taskId, newText) {
-    const dayData = state.weeklyData[dateKey];
-    if (!dayData) return;
-
-    const task = dayData.tasks.find(t => t.id === taskId);
-    if (task && newText.trim()) {
-        task.text = newText.trim();
-        saveToLocalStorage();
-        renderDay(dateKey);
-    }
-}
-
-function openEditModal(dateKey, taskId) {
-    const dayData = state.weeklyData[dateKey];
-    if (!dayData) return;
-    const task = dayData.tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const modal = document.getElementById('editTaskModal');
-    const input = document.getElementById('editTaskInput');
-    const charCount = document.getElementById('editCharCount');
-
-    input.value = task.text;
-    charCount.textContent = `${task.text.length}/200`;
-    modal.setAttribute('data-date-key', dateKey);
-    modal.setAttribute('data-task-id', taskId);
-    modal.classList.add('active');
-    setTimeout(() => input.focus(), 100);
-}
-
-function closeEditModal() {
-    const modal = document.getElementById('editTaskModal');
-    modal.classList.remove('active');
 }
 
 function moveTask(dateKey, taskId, direction) {
@@ -321,91 +158,20 @@ function moveTask(dateKey, taskId, direction) {
     });
 
     saveToLocalStorage();
-    renderDay(dateKey);
-}
-
-function moveTaskAcrossDays(sourceDateKey, targetDateKey, taskId, targetIndex = null) {
-    if (sourceDateKey === targetDateKey) return;
-
-    const sourceDayData = state.weeklyData[sourceDateKey];
-
-    // Ensure target day data exists
-    initializeDayData(targetDateKey);
-    const targetDayData = state.weeklyData[targetDateKey];
-
-    // Check if target day is full
-    if (targetDayData.tasks.length >= 6) {
-        alert('⚠️ El día de destino ya tiene 6 tareas. No se pueden mover más tareas.');
-        return;
-    }
-
-    // Find and remove task from source
-    const taskIndex = sourceDayData.tasks.findIndex(t => t.id === taskId);
-    if (taskIndex === -1) return;
-    const [task] = sourceDayData.tasks.splice(taskIndex, 1);
-
-    // Update priorities in source day
-    sourceDayData.tasks.forEach((t, index) => {
-        t.priority = index + 1;
-    });
-
-    // Add task to target day
-    if (targetIndex !== null && targetIndex >= 0 && targetIndex <= targetDayData.tasks.length) {
-        targetDayData.tasks.splice(targetIndex, 0, task);
-    } else {
-        targetDayData.tasks.push(task);
-    }
-
-    // Update priorities in target day
-    targetDayData.tasks.forEach((t, index) => {
-        t.priority = index + 1;
-    });
-
-    saveToLocalStorage();
-    renderDay(sourceDateKey);
-    renderDay(targetDateKey);
-    updateStatistics();
-}
-
-function reorderTask(dateKey, taskId, targetIndex) {
-    const dayData = state.weeklyData[dateKey];
-    if (!dayData) return;
-
-    const currentIndex = dayData.tasks.findIndex(t => t.id === taskId);
-    if (currentIndex === -1) return;
-
-    // Remove task
-    const [task] = dayData.tasks.splice(currentIndex, 1);
-
-    // Insert at new position
-    // Adjust targetIndex if we removed an item before it
-    // Actually splicing handles shifting indices, but if targetIndex > currentIndex, 
-    // simply splicing at targetIndex works correctly if we consider array state AFTER removal?
-    // Be careful: if I move from 0 to 2. Remove 0. tasks len is N-1. Index 2 means become 3rd item.
-    // If I use splice, it inserts BEFORE index.
-
-    // Logic: 
-    // If moving down (currentIndex < targetIndex), the targetIndex refers to index in original array?
-    // No, usually targetIndex refers to index in the array as it is displayed.
-    // Let's rely on simple splicing.
-
-    dayData.tasks.splice(targetIndex, 0, task);
-
-    // Update priorities
-    dayData.tasks.forEach((t, index) => {
-        t.priority = index + 1;
-    });
-
-    saveToLocalStorage();
-    renderDay(dateKey);
+    renderCurrentDay();
 }
 
 // ========================================
 // Rendering Functions
 // ========================================
 
-function renderDay(dateKey) {
-    const dayCard = document.querySelector(`[data-date="${dateKey}"]`);
+function renderCurrentDay() {
+    const date = new Date(state.currentWeekStart);
+    date.setDate(state.currentWeekStart.getDate() + state.currentDayIndex);
+    const dateKey = getDateKey(date);
+
+    // Select the specific day card based on current index
+    const dayCard = document.querySelector(`.day-card[data-index="${state.currentDayIndex}"]`);
     if (!dayCard) return;
 
     const dayData = state.weeklyData[dateKey] || { tasks: [] };
@@ -461,12 +227,6 @@ function createTaskElement(task, dateKey, index, totalTasks) {
                     </svg>
                 </button>
             ` : ''}
-            <button class="task-btn edit-btn" data-task-id="${task.id}" title="Editar tarea">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-            </button>
             <button class="task-btn delete-btn" data-task-id="${task.id}" title="Eliminar">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 6L6 18M6 6l12 12"/>
@@ -478,14 +238,6 @@ function createTaskElement(task, dateKey, index, totalTasks) {
     // Event listeners
     const checkbox = taskItem.querySelector('.task-checkbox');
     checkbox.addEventListener('click', () => toggleTask(dateKey, task.id));
-
-    const editBtn = taskItem.querySelector('.edit-btn');
-    if (editBtn) {
-        editBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openEditModal(dateKey, task.id);
-        });
-    }
 
     const deleteBtn = taskItem.querySelector('.delete-btn');
     if (deleteBtn) {
@@ -513,16 +265,12 @@ function createTaskElement(task, dateKey, index, totalTasks) {
         });
     }
 
-    // Drag and drop events for task
-    taskItem.setAttribute('draggable', 'true');
-    taskItem.addEventListener('dragstart', (e) => handleDragStart(e, task, dateKey));
-    taskItem.addEventListener('dragend', handleDragEnd);
-
     return taskItem;
 }
 
 function updateDayProgress(dateKey) {
-    const dayCard = document.querySelector(`[data-date="${dateKey}"]`);
+    // Select the specific day card by date key
+    const dayCard = document.querySelector(`.day-card[data-date="${dateKey}"]`);
     if (!dayCard) return;
 
     const dayData = state.weeklyData[dateKey] || { tasks: [] };
@@ -543,13 +291,12 @@ function updateDayProgress(dateKey) {
     }
 
     if (progressFill) {
-        const circumference = 2 * Math.PI * 20; // radius = 20
+        const circumference = 2 * Math.PI * 20;
         const offset = circumference - (percentage / 100) * circumference;
         progressFill.style.strokeDasharray = circumference;
         progressFill.style.strokeDashoffset = offset;
     }
 
-    // Mark day as completed if all tasks are done
     if (totalTasks > 0 && completedTasks === totalTasks) {
         dayCard.classList.add('completed');
     } else {
@@ -558,24 +305,22 @@ function updateDayProgress(dateKey) {
 }
 
 function renderWeek() {
-    const daysGrid = document.getElementById('daysGrid');
-    daysGrid.innerHTML = '';
+    const carousel = document.getElementById('daysCarousel');
+    const dots = document.getElementById('dayDots');
 
-    // Add SVG gradient definition (only once)
-    const svgDefs = `
-        <svg width="0" height="0" style="position: absolute;">
-            <defs>
-                <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:hsl(260, 85%, 55%);stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:hsl(290, 85%, 60%);stop-opacity:1" />
-                </linearGradient>
-            </defs>
-        </svg>
-    `;
-    daysGrid.insertAdjacentHTML('beforebegin', svgDefs);
+    carousel.innerHTML = '';
+    dots.innerHTML = '';
+
+    // Create carousel inner container
+    const carouselInner = document.createElement('div');
+    carouselInner.className = 'days-carousel-inner';
+    carouselInner.id = 'carouselInner';
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Find today's index
+    let todayIndex = 0;
 
     for (let i = 0; i < 7; i++) {
         const date = new Date(state.currentWeekStart);
@@ -583,11 +328,14 @@ function renderWeek() {
         const dateKey = getDateKey(date);
 
         const isToday = date.getTime() === today.getTime();
+        if (isToday) todayIndex = i;
+
         const dayData = state.weeklyData[dateKey] || { tasks: [] };
 
         const dayCard = document.createElement('div');
         dayCard.className = 'day-card';
         dayCard.setAttribute('data-date', dateKey);
+        dayCard.setAttribute('data-index', i);
 
         dayCard.innerHTML = `
             <div class="day-header">
@@ -599,8 +347,14 @@ function renderWeek() {
                     <div class="progress-text">0/0</div>
                     <div class="progress-circle">
                         <svg class="progress-svg" width="48" height="48" viewBox="0 0 48 48">
+                            <defs>
+                                <linearGradient id="progressGradient${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:hsl(260, 85%, 55%);stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:hsl(290, 85%, 60%);stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
                             <circle class="progress-bg" cx="24" cy="24" r="20"/>
-                            <circle class="progress-fill" cx="24" cy="24" r="20"/>
+                            <circle class="progress-fill" cx="24" cy="24" r="20" stroke="url(#progressGradient${i})"/>
                         </svg>
                         <div class="progress-percent">0%</div>
                     </div>
@@ -619,19 +373,19 @@ function renderWeek() {
                 />
                 ${dayData.tasks.length >= 6 ?
                 '<div class="task-limit-warning">⚠️ Límite de 6 tareas alcanzado</div>' :
-                '<button class="add-task-btn" data-date="${dateKey}">+ Agregar Tarea</button>'
+                `<button class="add-task-btn" data-date="${dateKey}">+ Agregar Tarea</button>`
             }
             </div>
         `;
 
-        // Drag and drop events for day card
-        dayCard.addEventListener('dragover', handleDragOver);
-        dayCard.addEventListener('dragenter', handleDragEnter);
-        dayCard.addEventListener('dragleave', handleDragLeave);
-        dayCard.addEventListener('drop', (e) => handleDrop(e, dateKey));
+        carouselInner.appendChild(dayCard);
 
-        daysGrid.appendChild(dayCard);
-        renderDay(dateKey);
+        // Create dot
+        const dot = document.createElement('div');
+        dot.className = `day-dot ${i === todayIndex ? 'active' : ''}`;
+        dot.setAttribute('data-index', i);
+        dot.addEventListener('click', () => goToDay(i));
+        dots.appendChild(dot);
 
         // Event listener for add task input
         const input = dayCard.querySelector('.add-task-input');
@@ -640,7 +394,7 @@ function renderWeek() {
                 const success = addTask(dateKey, input.value.trim());
                 if (success) {
                     input.value = '';
-                    renderDay(dateKey);
+                    renderCurrentDay();
                     updateStatistics();
                 }
             }
@@ -655,7 +409,117 @@ function renderWeek() {
         }
     }
 
+    carousel.appendChild(carouselInner);
+
+    // Render tasks for all days
+    renderAllDays();
+
+    // Set initial day to today
+    state.currentDayIndex = todayIndex;
+    goToDay(todayIndex);
+
+    // Add touch events for swiping
+    setupTouchEvents();
+
     updateStatistics();
+}
+
+// ========================================
+// Render All Days' Tasks
+// ========================================
+
+function renderAllDays() {
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(state.currentWeekStart);
+        date.setDate(state.currentWeekStart.getDate() + i);
+        const dateKey = getDateKey(date);
+
+        const dayCard = document.querySelector(`.day-card[data-index="${i}"]`);
+        if (!dayCard) continue;
+
+        const dayData = state.weeklyData[dateKey] || { tasks: [] };
+        const tasksList = dayCard.querySelector('.tasks-list');
+
+        // Clear existing tasks
+        tasksList.innerHTML = '';
+
+        if (dayData.tasks.length === 0) {
+            tasksList.innerHTML = `
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="9" y1="9" x2="15" y2="9"/>
+                        <line x1="9" y1="13" x2="15" y2="13"/>
+                        <line x1="9" y1="17" x2="13" y2="17"/>
+                    </svg>
+                    <p>No hay tareas programadas</p>
+                    <p style="font-size: 0.75rem;">Agrega hasta 6 tareas para este día</p>
+                </div>
+            `;
+        } else {
+            dayData.tasks.forEach((task, index) => {
+                const taskItem = createTaskElement(task, dateKey, index, dayData.tasks.length);
+                tasksList.appendChild(taskItem);
+            });
+        }
+
+        updateDayProgress(dateKey);
+    }
+}
+
+// ========================================
+// Touch Events for Swipe Navigation
+// ========================================
+
+function setupTouchEvents() {
+    const carousel = document.getElementById('carouselInner');
+
+    carousel.addEventListener('touchstart', (e) => {
+        state.touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    carousel.addEventListener('touchend', (e) => {
+        state.touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, { passive: true });
+}
+
+function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = state.touchStartX - state.touchEndX;
+
+    if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+            // Swipe left - next day
+            if (state.currentDayIndex < 6) {
+                goToDay(state.currentDayIndex + 1);
+            }
+        } else {
+            // Swipe right - previous day
+            if (state.currentDayIndex > 0) {
+                goToDay(state.currentDayIndex - 1);
+            }
+        }
+    }
+}
+
+function goToDay(index) {
+    state.currentDayIndex = index;
+    const carousel = document.getElementById('carouselInner');
+    const offset = -index * 100;
+    carousel.style.transform = `translateX(${offset}%)`;
+
+    // Update dots
+    document.querySelectorAll('.day-dot').forEach((dot, i) => {
+        if (i === index) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+
+    // Render current day
+    renderCurrentDay();
 }
 
 // ========================================
@@ -670,7 +534,6 @@ function updateStatistics() {
     let totalTasks = 0;
     let completedTasks = 0;
 
-    // Calculate stats for current week
     for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
         const dateKey = getDateKey(d);
         const dayData = state.weeklyData[dateKey];
@@ -701,12 +564,10 @@ function checkStreak() {
     const todayData = state.weeklyData[todayKey];
     const yesterdayData = state.weeklyData[yesterdayKey];
 
-    // Check if today's tasks are all completed
     if (todayData && todayData.tasks.length > 0) {
         const todayCompleted = todayData.tasks.every(t => t.completed);
 
         if (todayCompleted) {
-            // Check if yesterday was also completed
             if (yesterdayData && yesterdayData.tasks.length > 0 && yesterdayData.tasks.every(t => t.completed)) {
                 state.streak++;
             } else {
@@ -830,217 +691,64 @@ function clearAllData() {
 }
 
 // ========================================
-// Utility
-// ======================================== 
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ========================================
-// Initialization
+// Mobile Menu
 // ========================================
 
-function init() {
-    // Load data from localStorage
-    loadFromLocalStorage();
+function initMobileMenu() {
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
 
-    // Set current week
-    state.currentWeekStart = getWeekStart();
-
-    // Update week display
-    updateWeekDisplay();
-
-    // Render initial week
-    renderWeek();
-
-    // Event listeners
-    document.getElementById('prevWeekBtn').addEventListener('click', () => changeWeek(-1));
-    document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(1));
-    document.getElementById('exportBtn').addEventListener('click', exportWeeklyPlan);
-    document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
-
-    // Data persistence buttons
-    const saveJsonBtn = document.getElementById('saveJsonBtn');
-    if (saveJsonBtn) {
-        saveJsonBtn.addEventListener('click', exportDataAsJSON);
-    }
-
-    const loadJsonInput = document.getElementById('loadJsonInput');
-    if (loadJsonInput) {
-        loadJsonInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                importDataFromJSON(e.target.files[0]);
-                e.target.value = ''; // reset input
-            }
-        });
-    }
-
-    const loadJsonBtn = document.getElementById('loadJsonBtn');
-    if (loadJsonBtn) {
-        loadJsonBtn.addEventListener('click', () => {
-            document.getElementById('loadJsonInput').click();
-        });
-    }
-
-    // Show initial save status
-    updateSaveStatus(Object.keys(state.weeklyData).length > 0 ? 'saved' : 'error');
-
-    // Eat That Frog Modal Event Listeners
-    initEatFrogModal();
-
-    // Edit Task Modal Event Listeners
-    initEditTaskModal();
-}
-
-function initEditTaskModal() {
-    const modal = document.getElementById('editTaskModal');
-    const closeBtn = document.getElementById('closeEditModal');
-    const cancelBtn = document.getElementById('cancelEditBtn');
-    const saveBtn = document.getElementById('saveEditBtn');
-    const input = document.getElementById('editTaskInput');
-    const charCount = document.getElementById('editCharCount');
-    const overlay = modal.querySelector('.modal-overlay');
-
-    // Character counter
-    input.addEventListener('input', () => {
-        charCount.textContent = `${input.value.length}/200`;
+    menuToggle.addEventListener('click', () => {
+        mobileMenu.classList.toggle('active');
     });
 
-    // Save on Enter key
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            saveEdit();
-        }
-        if (e.key === 'Escape') {
-            closeEditModal();
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!mobileMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+            mobileMenu.classList.remove('active');
         }
     });
 
-    function saveEdit() {
-        const dateKey = modal.getAttribute('data-date-key');
-        const taskId = parseInt(modal.getAttribute('data-task-id'));
-        const newText = input.value.trim();
-        if (newText) {
-            editTask(dateKey, taskId, newText);
-            closeEditModal();
-        } else {
-            input.classList.add('input-error');
-            setTimeout(() => input.classList.remove('input-error'), 600);
-        }
-    }
+    // Menu buttons
+    document.getElementById('eatFrogBtnMobile').addEventListener('click', () => {
+        mobileMenu.classList.remove('active');
+        document.getElementById('eatFrogModal').classList.add('active');
+    });
 
-    saveBtn.addEventListener('click', saveEdit);
-    closeBtn.addEventListener('click', closeEditModal);
-    cancelBtn.addEventListener('click', closeEditModal);
-    overlay.addEventListener('click', closeEditModal);
-}
+    document.getElementById('clearAllBtnMobile').addEventListener('click', () => {
+        mobileMenu.classList.remove('active');
+        clearAllData();
+    });
 
-// ========================================
-// Drag and Drop Handlers
-// ========================================
-
-function handleDragStart(e, task, dateKey) {
-    state.draggedItem = { task, sourceDateKey: dateKey };
-    e.target.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    // Set data for compatibility
-    e.dataTransfer.setData('text/plain', JSON.stringify({ taskId: task.id, dateKey }));
-}
-
-function handleDragEnd(e) {
-    e.target.classList.remove('dragging');
-    state.draggedItem = null;
-
-    // Remove drag-over class from all days
-    document.querySelectorAll('.day-card').forEach(card => {
-        card.classList.remove('drag-over');
+    document.getElementById('exportBtnMobile').addEventListener('click', () => {
+        mobileMenu.classList.remove('active');
+        exportWeeklyPlan();
     });
 }
 
-function handleDragOver(e) {
-    e.preventDefault(); // Necessary to allow dropping
-    e.dataTransfer.dropEffect = 'move';
-    return false;
-}
+// ========================================
+// Collapsible Explanation
+// ========================================
 
-function handleDragEnter(e) {
-    e.preventDefault();
-    const dayCard = e.currentTarget;
-    dayCard.classList.add('drag-over');
-}
+function initExplanationToggle() {
+    const toggle = document.getElementById('explanationToggle');
+    const card = document.getElementById('explanationCard');
 
-function handleDragLeave(e) {
-    const dayCard = e.currentTarget;
-    // Check if we are really leaving the day card (and not just entering a child)
-    if (!dayCard.contains(e.relatedTarget)) {
-        dayCard.classList.remove('drag-over');
-    }
-}
-
-function handleDrop(e, targetDateKey) {
-    e.stopPropagation(); // Stops the browser from redirecting.
-    e.preventDefault();
-
-    const dayCard = e.currentTarget;
-    dayCard.classList.remove('drag-over');
-
-    if (!state.draggedItem) return;
-
-    const { task, sourceDateKey } = state.draggedItem;
-    const sourceTaskId = task.id;
-
-    // Determine target index based on drop position
-    let targetIndex = null;
-    const targetTaskEl = e.target.closest('.task-item');
-
-    const targetDayData = state.weeklyData[targetDateKey] || { tasks: [] };
-    const targetTasks = targetDayData.tasks;
-
-    if (targetTaskEl) {
-        const targetCheckbox = targetTaskEl.querySelector('.task-checkbox');
-        if (targetCheckbox) {
-            const targetId = parseInt(targetCheckbox.getAttribute('data-task-id'));
-            const foundIndex = targetTasks.findIndex(t => t.id === targetId);
-            if (foundIndex !== -1) {
-                targetIndex = foundIndex;
-            }
-        }
-    } else {
-        // Did not drop on a task, so append to end
-        targetIndex = targetTasks.length;
-    }
-
-    if (sourceDateKey !== targetDateKey) {
-        moveTaskAcrossDays(sourceDateKey, targetDateKey, sourceTaskId, targetIndex);
-    } else {
-        // Reorder within same day
-        if (targetIndex !== null) {
-            reorderTask(sourceDateKey, sourceTaskId, targetIndex);
-        }
-    }
+    toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        card.classList.toggle('active');
+    });
 }
 
 // ========================================
-// Eat That Frog Modal Functionality
+// Eat That Frog Modal
 // ========================================
 
 function initEatFrogModal() {
     const modal = document.getElementById('eatFrogModal');
-    const openBtn = document.getElementById('eatFrogBtn');
     const closeBtn = document.getElementById('closeModal');
     const overlay = modal.querySelector('.modal-overlay');
 
-    // Open modal
-    openBtn.addEventListener('click', () => {
-        modal.classList.add('active');
-        loadTodayFrogSelector();
-    });
-
-    // Close modal
     closeBtn.addEventListener('click', () => {
         modal.classList.remove('active');
     });
@@ -1057,15 +765,12 @@ function initEatFrogModal() {
         btn.addEventListener('click', () => {
             const tabName = btn.getAttribute('data-tab');
 
-            // Update active tab button
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // Update active tab content
             tabContents.forEach(content => content.classList.remove('active'));
             document.getElementById(`${tabName}-tab`).classList.add('active');
 
-            // Load frog selector if on frog tab
             if (tabName === 'frog') {
                 loadTodayFrogSelector();
             }
@@ -1074,7 +779,7 @@ function initEatFrogModal() {
 
     // ABCDE Method button
     document.getElementById('applyABCDE').addEventListener('click', () => {
-        alert('💡 Consejo del Método ABCDE:\\n\\nRevisa tus 6 tareas de hoy y clasifícalas:\\n\\n✅ Prioriza las tareas "A" y "B"\\n⏸️ Pospone las tareas "C"\\n👥 Delega las tareas "D"\\n❌ Elimina las tareas "E"\\n\\nRecuerda: Nunca hagas una tarea B si tienes una tarea A pendiente.');
+        alert('💡 Consejo del Método ABCDE:\n\nRevisa tus 6 tareas de hoy y clasifícalas:\n\n✅ Prioriza las tareas "A" y "B"\n⏸️ Pospone las tareas "C"\n👥 Delega las tareas "D"\n❌ Elimina las tareas "E"\n\nRecuerda: Nunca hagas una tarea B si tienes una tarea A pendiente.');
     });
 
     // Pareto button
@@ -1085,14 +790,14 @@ function initEatFrogModal() {
         const todayData = state.weeklyData[todayKey];
 
         if (!todayData || todayData.tasks.length === 0) {
-            alert('📋 No tienes tareas programadas para hoy.\\n\\nAgrega tus tareas primero en el planificador semanal.');
+            alert('📋 No tienes tareas programadas para hoy.\n\nAgrega tus tareas primero en el planificador semanal.');
             return;
         }
 
         const taskCount = todayData.tasks.length;
         const highImpactCount = Math.max(1, Math.ceil(taskCount * 0.2));
 
-        alert(`🎯 Regla 80/20 Aplicada:\\n\\nDe tus ${taskCount} tareas de hoy, las primeras ${highImpactCount} tareas son tu 20% de alto impacto.\\n\\n💡 Enfócate PRIMERO en estas ${highImpactCount} tareas para obtener el 80% de tus resultados.\\n\\n¿Están actualmente en las posiciones correctas? Si no, reordénalas en tu planificador.`);
+        alert(`🎯 Regla 80/20 Aplicada:\n\nDe tus ${taskCount} tareas de hoy, las primeras ${highImpactCount} tareas son tu 20% de alto impacto.\n\n💡 Enfócate PRIMERO en estas ${highImpactCount} tareas para obtener el 80% de tus resultados.\n\n¿Están actualmente en las posiciones correctas? Si no, reordénalas en tu planificador.`);
     });
 }
 
@@ -1129,37 +834,40 @@ function loadTodayFrogSelector() {
 
         if (index === 0) {
             option.classList.add('selected');
-            option.style.borderColor = 'var(--success)';
         }
 
         option.addEventListener('click', () => {
             frogSelector.querySelectorAll('.frog-task-option').forEach(opt => {
                 opt.classList.remove('selected');
-                opt.style.borderColor = '';
             });
             option.classList.add('selected');
-            option.style.borderColor = 'var(--success)';
 
-            alert(`🐸 ¡Excelente elección!\\n\\n"${task.text}"\\n\\n✅ Esta es tu SAPO del día.\\n✅ Concéntrate en esta tarea PRIMERO.\\n✅ No pases a otra tarea hasta completarla.\\n✅ Tendrás la satisfacción de saber que lo peor ya pasó.`);
+            alert(`🐸 ¡Excelente elección!\n\n"${task.text}"\n\n✅ Esta es tu SAPO del día.\n✅ Concéntrate en esta tarea PRIMERO.\n✅ No pases a otra tarea hasta completarla.\n✅ Tendrás la satisfacción de saber que lo peor ya pasó.`);
         });
 
         frogSelector.appendChild(option);
     });
+}
 
-    // Add motivational message
-    const motivation = document.createElement('div');
-    motivation.style.marginTop = 'var(--spacing-md)';
-    motivation.style.padding = 'var(--spacing-md)';
-    motivation.style.background = 'linear-gradient(135deg, hsla(142, 70%, 55%, 0.1) 0%, hsla(152, 70%, 50%, 0.1) 100%)';
-    motivation.style.borderLeft = '4px solid var(--success)';
-    motivation.style.borderRadius = 'var(--radius-md)';
-    motivation.innerHTML = `
-        <strong>💡 Recomendación:</strong> Tu tarea #1 (${escapeHtml(todayData.tasks[0].text)}) debería ser tu SAPO.
-        <br><small style="color: var(--text-secondary);">Es la más importante según tu priorización del Método Ivy Lee.</small>
-    `;
-    frogSelector.appendChild(motivation);
+// ========================================
+// Initialization
+// ========================================
+
+function init() {
+    loadFromLocalStorage();
+    state.currentWeekStart = getWeekStart();
+    updateWeekDisplay();
+    renderWeek();
+
+    // Event listeners
+    document.getElementById('prevWeekBtn').addEventListener('click', () => changeWeek(-1));
+    document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(1));
+
+    // Initialize components
+    initMobileMenu();
+    initExplanationToggle();
+    initEatFrogModal();
 }
 
 // Start the app
 document.addEventListener('DOMContentLoaded', init);
-
